@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"time"
 
 	"github.com/pkg/errors"
 	cligen "github.com/sigstore/cosign/cmd/cosign/cli/generate"
@@ -80,10 +79,14 @@ func SignImage(imageRef string, keyPath, certPath *string, pf cosign.PassFunc, i
 		certPathStr = *certPath
 	}
 
+	certChainPath := ""
+
 	outputSignaturePath := ""
 	outputCertificatePath := ""
 
-	return clisign.SignCmd(context.Background(), opt, regOpt, imageAnnotations, []string{imageRef}, certPathStr, true, "", outputSignaturePath, outputCertificatePath, false, false, "")
+	ro := &cliopt.RootOptions{}
+
+	return clisign.SignCmd(ro, opt, regOpt, imageAnnotations, []string{imageRef}, certPathStr, certChainPath, true, "", outputSignaturePath, outputCertificatePath, false, false, "")
 }
 
 func SignBlob(blobPath string, keyPath, certPath *string, pf cosign.PassFunc) (map[string][]byte, error) {
@@ -137,11 +140,12 @@ func SignBlob(blobPath string, keyPath, certPath *string, pf cosign.PassFunc) (m
 	base64Msg := []byte(base64.StdEncoding.EncodeToString(gzipMsg))
 	m["message"] = base64Msg
 
-	tlogUploadTimeout := defaultTlogUploadTimeout * time.Second
-
 	outputSignaturePath := ""
 	outputCertificatePath := ""
-	rawSig, err := clisign.SignBlobCmd(context.Background(), opt, regOpt, blobPath, false, outputSignaturePath, outputCertificatePath, tlogUploadTimeout)
+
+	ro := &cliopt.RootOptions{}
+
+	rawSig, err := clisign.SignBlobCmd(ro, opt, regOpt, blobPath, false, outputSignaturePath, outputCertificatePath)
 	if err != nil {
 		return nil, errors.Wrap(err, "cosign.SignBlobCmd() returned an error")
 	}
